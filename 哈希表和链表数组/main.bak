@@ -1,0 +1,194 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+//这个程序实现了哈希表,感觉概念挺复杂的，黑马这个课里的概念题。这个存储系统最大支持40000000个数据的哈希快速查找
+
+#define GroupNum 40
+bool putnum(int key);//存放数据，判断重复数据，存在返回false，不存在返回true
+int survivorNode=0;
+struct Nodelist* head[1000000] = {NULL};//簇上限为10000000，每个簇最多存储40个数据
+int biggestnums[1000000];//每个簇的最大键值
+int smallestnums[1000000];//每个簇的最小键值
+int maxkey=0;//最大键值
+int maxcount=0;//最大节点数
+int minkey=0;//最小键值
+int mincount=0;//最小节点数
+bool isprime(int n);//判断是否为质数
+int countnode(struct Nodelist* head);//统计节点数
+bool checknum(int key);//判断是否存在该键值
+int refer;//用来标记调用到第几个链表
+void __example();
+struct Nodelist{
+	int key;
+	struct Nodelist* next;
+	};//哈希表节点结构体定义
+
+
+//定义一个函数来进行对数据分组
+
+
+struct Nodelist* CreateNodelist(int key);
+//创建哈希表节点
+struct Nodelist* AddNewNode(struct Nodelist* head, int key);
+//添加新哈希表节点
+struct Nodelist* SearchNode(struct Nodelist* head, int key);
+//搜索哈希表节点
+struct Nodelist* DeleteNode(struct Nodelist* head, int key);
+//删除哈希表节点
+struct Nodelist* DeleteAllNodes(struct Nodelist* head);
+//删除所有哈希表节点
+
+
+
+/* run this program using the console pauser or add your own getch, system("pause") or input loop */
+
+int main(int argc, char** argv) {
+	int key;//入口为putnum函数。和checknum函数。能把非常多的数据快速判断是否存入哈希表中
+	__example();
+
+	return 0;
+}
+
+void __example(){//随机放入1000000个随机数，判断是否存在该键值
+	srand(time(NULL));
+	int tmp;
+	printf("{");
+	for(int i =1;i<=100;i++){
+		tmp=rand();
+		putnum(tmp);
+		printf("%d,",tmp);
+	}
+	printf("\n输入查询:");
+	
+	scanf("%d",&tmp);
+	if(checknum(tmp)){
+	printf("\ntrue");
+	}
+}
+
+
+struct Nodelist* CreateNodelist(int key){
+	struct Nodelist* node = (struct Nodelist*)malloc(sizeof(struct Nodelist));
+	node->key = key;
+	node->next = NULL;
+	return node;
+}
+
+struct Nodelist* AddNewNode(struct Nodelist* head, int key){
+	struct Nodelist* node = CreateNodelist(key);
+	if(head == NULL){
+		return node;
+	}
+	node->next = head;
+	return node;
+}
+
+struct Nodelist* SearchNode(struct Nodelist* head, int key){
+	struct Nodelist* node = head;
+	while(node != NULL){
+		if(node->key == key){
+			return node;
+		}
+		node = node->next;
+	}
+	return NULL;
+}
+
+struct Nodelist* DeleteNode(struct Nodelist* head, int key){
+	struct Nodelist* node = SearchNode(head, key);
+	if(node == NULL){
+		return head;
+	}
+	if(node->next == NULL){
+		free(node);
+		return NULL;
+	}
+	struct Nodelist* thelast = head;
+	while(thelast->next != node){
+		thelast = thelast->next;
+	}
+	thelast->next = NULL;
+	free(node);
+	return head;
+}
+
+bool putnum(int key){
+	if(survivorNode==0){
+		survivorNode++;
+		CreateNodelist(key);
+		return true;
+	}else{
+		for(int i=0;i<survivorNode;i++){
+			if(SearchNode(head[i],key)!=NULL){
+
+				return false;
+			}
+			if(refer=i,countnode(head[i])<GroupNum){
+				head[i]=AddNewNode(head[i],key);
+				return true;
+			}else if(maxkey<head[i]->key){
+				head[i]=AddNewNode(head[i],key);
+				DeleteNode(head[i],maxkey);
+				putnum(maxkey);
+				return true;
+			}else if(minkey>head[i]->key){
+				head[i]=AddNewNode(head[i],key);
+				DeleteNode(head[i],minkey);
+				putnum(minkey);
+				return true;
+			}
+			
+		}
+
+		
+
+
+
+	}
+
+}
+
+bool isprime(int n){
+	if(n<=1){
+		return false;
+	}
+	for(int i=2;i*i<=sqrt(n);i++){
+		if(n%i==0){
+			return false;
+		}
+	}
+	return true;
+}
+
+int countnode(struct Nodelist* head){
+	int count=0;
+	while(head!=NULL){
+		count++;
+		if(head->key>maxkey){
+			maxkey=head->key;
+
+		}
+		if(head->key<minkey){
+			minkey=head->key;
+		}
+		head=head->next;
+
+	}
+	
+	biggestnums[refer]=maxkey;
+	smallestnums[refer]=minkey;
+	return count;
+}
+
+bool checknum(int key){
+	for(int i=0;i<survivorNode;i++){
+		if(key>=biggestnums[i]&&key<=smallestnums[i]){
+			if(SearchNode(head[i],key)!=NULL){
+				return true;
+			}
+		}
+	}
+	return false;
+}
